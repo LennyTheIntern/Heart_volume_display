@@ -1,0 +1,84 @@
+﻿<Window x:Class="Heart_volume_display.settings"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Heart_volume_display"
+        mc:Ignorable="d"
+        Title="settings" Height="168.272" Width="445.609">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"/>
+            <RowDefinition/>
+            <RowDefinition Height="20"/>
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="1" Grid.ColumnSpan="3">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox  x:Name="AudioListBox" SelectionChanged="AudioListBox_SelectionChanged" ItemsSource="{Binding AudioDeviceLabels}">
+                      
+                    </ComboBox>
+                    <Label Grid.Column="1">
+                        Audeo Source
+                    </Label>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="{Binding comport_binding}"/>
+                    <Label Grid.Column="1">
+                        COM Port
+                    </Label>
+                    <ComboBox x:Name="ComPortListBox" ItemsSource="{Binding PortLabels}" SelectionChanged="ComPortListBox_SelectionChanged">
+                       
+                    </ComboBox>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="{Binding comport_binding}"/>
+                    <Label Grid.Column="1">
+                        color style
+                    </Label>
+                    <ComboBox>
+                        <ListBoxItem Content="balh"/>
+                        <ListBoxItem Content="balh"/>
+                        <ListBoxItem Content="balh"/>
+                        <ListBoxItem Content="balh"/>
+                        <ListBoxItem Content="balh"/>
+                    </ComboBox>
+                </Grid>
+                <CheckBox>
+                    Window Always on top ?
+                </CheckBox>
+                
+            </StackPanel>
+
+        </ScrollViewer>
+        <Button Grid.Row="2" Click="Button_Click">
+            Apply
+        </Button>
+        <Button Grid.Row="2" Grid.Column="1" Click="Button_Click_1">
+            ok
+        </Button>
+        <!-- had a stack panal of grids with 2 elements
+            col 0 is label then selected then a extener stacked on the side!-->
+
+    </Grid>
+</Window>
