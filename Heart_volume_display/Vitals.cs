@@ -21,11 +21,30 @@ namespace Heart_volume_display
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private SerialPort port;//= new SerialPort("COM8",115200, Parity.None, 8, StopBits.One); // add port select
+        enum State
+        {
+            None = 0 ,
+            start = 1 ,
+            calm = 2,
+            stressed = 3,
+            scared = 4
+        }
+
+        State state = State.None;
+
+
+
+        private SerialPort port;
 
         int Buffersize = 2000;
+        List<double> heartRateList;
+        double prev_avg = 0;
+        double prev_sdv = 0;
         public double HeartRateNumber { get; set; }
         public IList<string> PointsBuffer { get; set; }
+
+      
+        
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -66,7 +85,7 @@ namespace Heart_volume_display
                 PortLabels.Add(i);
             }
 
-
+            heartRateList = new List<double>();
             SerialModel = new PlotModel();
             SerialModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, IsAxisVisible = false });
             SerialModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Minimum = 100, Maximum = 1000, IsAxisVisible = false });   
@@ -81,6 +100,7 @@ namespace Heart_volume_display
             if (port.IsOpen)
             {
                 //port.DataReceived += new SerialDataReceivedEventHandler(port_DataReceived);
+                //how do I use a timer for the 
                 port.DataReceived -= new SerialDataReceivedEventHandler(port_DataReceived);
                 port.Close();
                 PointsBuffer.Clear();
@@ -104,7 +124,6 @@ namespace Heart_volume_display
 
         private void port_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            //if (data != null)
             data += port.ReadExisting();
         }
 
@@ -142,7 +161,7 @@ namespace Heart_volume_display
                                     }
                                     catch
                                     {
-
+                                        
                                     }
                                 }
 
@@ -153,9 +172,14 @@ namespace Heart_volume_display
                         
 
                     }
+
+
+
+
                     data = null;
                     SerialModel.InvalidatePlot(true);
                     OnPropertyChanged("HeartRateNumber");
+                    heartRateList.Add(HeartRateNumber);
                     if (PointsBuffer.Count > Buffersize - 1)
                     {
                         for (int i = 0; i < (PointsBuffer.Count >> 4); i++)
@@ -183,6 +207,63 @@ namespace Heart_volume_display
             aTimer.AutoReset = true;
             aTimer.Enabled = true;
         }
+        public void SetTimerB() // this will be for the average check
+        {
+            aTimer = new System.Timers.Timer(10); // state action every 10 seconds
+            aTimer.Elapsed += Updata_points;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+
+        public void SetTimerC() // this will be for the average check
+        {
+            aTimer = new System.Timers.Timer(10); // state action every 10 seconds
+            aTimer.Elapsed += Updata_points;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+        void CheckHeartRate()
+        {
+           
+                switch(state)
+            {
+                case State.scared:
+                        // start the scared mouse shake
+                    break;
+                case State.calm:
+                        // start the calm process 
+                    break;
+                default:
+                    break;
+            }
+                if (heartRateList.Average() > prev_avg + prev_sdv) 
+                    // if the heart hart hate is not an outlier than it should be considerd normal
+                {
+                    state++;
+                }
+                else if(heartRateList.Average() > prev_avg + prev_sdv)
+                {
+                    state--;
+                    // start tick count of how long in calm state
+                }
+                else
+                {
+                    prev_avg = heartRateList.Average();
+                    prev_sdv = Math.Sqrt(heartRateList.Average(v => Math.Pow(v - prev_avg, 2)));
+                }
+                
+        }
+
+        void Async_scared_state() // this is 
+        {
+          // have a timer and a random extention and at the the en there will either be a noise played or a pop up , this will be a timer interupt for timer b
+        }
+
+        void Async_scare_state()
+        {
+
+        }
+
 
         public void Update_Content()
         {
