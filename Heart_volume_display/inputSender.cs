@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO.Ports;
 using System.Runtime.InteropServices;
-
 namespace Heart_volume_display
 {
     public class InputSender
@@ -183,4 +182,5 @@ namespace Heart_volume_display
         }
         #endregion
     }
+
 }

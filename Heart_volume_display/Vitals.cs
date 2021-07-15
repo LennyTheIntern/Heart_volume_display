@@ -15,6 +15,7 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 
+
 namespace Heart_volume_display
 {
     public class Vitals : INotifyPropertyChanged
@@ -79,6 +80,7 @@ namespace Heart_volume_display
             SerialModel.PlotAreaBorderColor = OxyColors.Transparent;
             SetTimerA();
             SetTimerB();
+            SetTimerShake();
         }
 
         public void Invalidate_settings()
@@ -113,9 +115,6 @@ namespace Heart_volume_display
         {
             data += port.ReadExisting();
         }
-
-
-
         
         private void Updata_points(object sender, ElapsedEventArgs e)
         {
@@ -225,12 +224,29 @@ namespace Heart_volume_display
         System.Timers.Timer state_output_timer;
         public void SetTimerB()
         {
-            state_output_timer = new System.Timers.Timer(1000);
+            state_output_timer = new System.Timers.Timer(100);
             state_output_timer.Elapsed += state_timer_elapsed;
             state_output_timer.AutoReset = true;
             state_output_timer.Enabled = true;
             timer_start = Environment.TickCount & Int32.MaxValue;
         }
+
+        System.Timers.Timer shake_mouse_timer;
+        public void SetTimerShake()
+        {
+            shake_mouse_timer = new System.Timers.Timer(100);
+            shake_mouse_timer.Elapsed += rand_mouse_move;
+            shake_mouse_timer.AutoReset = true;
+            shake_mouse_timer.Enabled = false;
+        }
+
+
+        public void SetTimer()
+        {
+
+        }
+
+
 
         enum State
         {
@@ -244,7 +260,7 @@ namespace Heart_volume_display
         State state = State.start;
         double stdv = 0;
         double avg = 0;
-        void intput_state()// cursed
+        void intput_state() // cursed
         {
                 if (state == State.start)
                 {
@@ -259,17 +275,17 @@ namespace Heart_volume_display
                 }
                 else
                 {
-                    var temp = heartRateList.Average();// check for no elements
+                    var temp = heartRateList.Average(); // check for no elements
 
                     if (temp > avg + stdv)
                     {
                     avg = temp;
                     double sum = heartRateList.Sum(d => Math.Pow(d - avg, 2));
 
-                    stdv = Math.Sqrt((sum) / (heartRateList.Count() - 1));
-                    add_state();
+                        stdv = Math.Sqrt((sum) / (heartRateList.Count() - 1));
+                        add_state();
                     }
-                    else if (temp < avg - stdv)// make sure it is 
+                    else if (temp < avg - stdv) // make sure it is 
                     {
                     avg = temp;
                     double sum = heartRateList.Sum(d => Math.Pow(d - avg, 2));
@@ -295,6 +311,7 @@ namespace Heart_volume_display
             {
 
                 case State.normal:
+                   
                     Console.WriteLine("normal");
                     if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
                     {
@@ -311,6 +328,12 @@ namespace Heart_volume_display
                 case State.scared:
                     // output curso
                     Console.WriteLine("scared");
+                    
+                    if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
+                    {
+                        drop_state();
+                    }
+
                     break;
                 case State.calm:
                     Console.WriteLine("calm");
@@ -318,12 +341,27 @@ namespace Heart_volume_display
                     {
                         add_state();
                     }
+                    
                     break;
                 default:
                     break;
             }
         }
 
+
+        Random rnd = new Random();
+        private void rand_mouse_move(object sender, ElapsedEventArgs e)
+        {
+            InputSender.SendMouseInput(new InputSender.MouseInput[]
+            {
+                new InputSender.MouseInput
+                {
+                    dx = rnd.Next(-10, 10) ,
+                    dy = rnd.Next(-10, 10) ,
+                    dwFlags = (uint)(InputSender.MouseEventF.Move),
+                }
+            });
+        }
 
         private void drop_state() // negitive transition
         {
@@ -339,6 +377,7 @@ namespace Heart_volume_display
                     state = State.normal;
                     break;
                 case State.scared:
+                    shake_mouse_timer.Stop();
                     timer_start = Environment.TickCount & Int32.MaxValue;
                     timer_thresh = 4000;
                     state = State.normal;
@@ -364,6 +403,7 @@ namespace Heart_volume_display
                     break;
                 case State.stressed:
                     state = State.scared;
+                    shake_mouse_timer.Start();
                     timer_start = Environment.TickCount & Int32.MaxValue;
                     timer_thresh = 4000;
                     break;

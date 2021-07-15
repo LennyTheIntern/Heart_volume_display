@@ -98,6 +98,7 @@
     </ApplicationDefinition>
     <Compile Include="CustomPlotModal.cs" />
     <Compile Include="FearOutput.cs" />
+    <Compile Include="InputSender.cs" />
     <Compile Include="radial_volumbar.xaml.cs">
       <DependentUpon>radial_volumbar.xaml</DependentUpon>
     </Compile>
