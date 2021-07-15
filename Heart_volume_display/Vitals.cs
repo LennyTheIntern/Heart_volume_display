@@ -21,30 +21,16 @@ namespace Heart_volume_display
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        enum State
-        {
-            None = 0 ,
-            start = 1 ,
-            calm = 2,
-            stressed = 3,
-            scared = 4
-        }
-
-        State state = State.None;
-
-
-
         private SerialPort port;
 
         int Buffersize = 2000;
         List<double> heartRateList;
         double prev_avg = 0;
         double prev_sdv = 0;
+        int calm_ticks = 0;
+        
         public double HeartRateNumber { get; set; }
         public IList<string> PointsBuffer { get; set; }
-
-      
-        
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -92,6 +78,7 @@ namespace Heart_volume_display
             SerialModel.Series.Add(new LineSeries { LineStyle = LineStyle.Solid, StrokeThickness = 4, Color = OxyColor.Parse("#9effa9") });
             SerialModel.PlotAreaBorderColor = OxyColors.Transparent;
             SetTimerA();
+            SetTimerB();
         }
 
         public void Invalidate_settings()
@@ -127,6 +114,9 @@ namespace Heart_volume_display
             data += port.ReadExisting();
         }
 
+
+
+        
         private void Updata_points(object sender, ElapsedEventArgs e)
         {
             if (data != null)
@@ -136,55 +126,70 @@ namespace Heart_volume_display
                 {
                     PointsBuffer.Add(i);
                 }
-                PointsBuffer.RemoveAt(PointsBuffer.Count - 1);
+                PointsBuffer.RemoveAt(PointsBuffer.Count - 1); // make sure the points buffer is not 0
                 
                 if (PointsBuffer.Count > Buffersize)
                 {
-                    var s = (LineSeries)SerialModel.Series[0];
+                    lock(PointsBuffer)
+                    { 
+                            var s = (LineSeries)SerialModel.Series[0];
 
-                    s.Points.Clear();
-                    int delta_x = 0;
-                    foreach (string i in PointsBuffer.ToList())
-                    {
-                        if (i != null)
-                        {
-                            var ii = i.Split(',');
-
-                            if (ii.Length == 3)
+                            s.Points.Clear();
+                            int delta_x = 0;
+                            foreach (string i in PointsBuffer.ToList())
                             {
-                                // how to check for a format exeption before operation
-                                if (ii[0] != "")
+                                if (i != null)
                                 {
-                                    try
+                                    var ii = i.Split(',');
+
+                                    if (ii.Length == 3)
                                     {
-                                        HeartRateNumber = double.Parse(ii[0]);
-                                    }
-                                    catch
-                                    {
-                                        
+                                        // how to check for a format exeption before operation
+                                        if (ii[0] != "")
+                                        {
+                                            try
+                                            {
+                                                HeartRateNumber = double.Parse(ii[0]);
+                                                lock (heartRateList)
+                                                {
+                                                    heartRateList.Add(HeartRateNumber);
+                                                }
+                                            }
+                                            catch
+                                            {
+
+                                            }
+                                        }
+                                        s.Points.Add(new DataPoint(delta_x, double.Parse(ii[2])));//TODO: check if they are in the right format
+
+
+                                        delta_x += 10;
                                     }
                                 }
-
-                                s.Points.Add(new DataPoint(delta_x, double.Parse(ii[2])));
-                                delta_x += 10;
                             }
-                        }
                         
-
                     }
-
-
-
-
+                    // empty data
                     data = null;
                     SerialModel.InvalidatePlot(true);
                     OnPropertyChanged("HeartRateNumber");
-                    heartRateList.Add(HeartRateNumber);
+
+                    // send the list of heart rates to the state machine 
+                    lock (heartRateList)
+                    {
+                        intput_state(); // when this is a ref then it breaks even when you lock it
+                        heartRateList.Clear();
+                    }
+                    // pop the front of the points list to make i appear like the hear wave is moving
+                    
                     if (PointsBuffer.Count > Buffersize - 1)
                     {
-                        for (int i = 0; i < (PointsBuffer.Count >> 4); i++)
+                        lock (PointsBuffer)
                         {
-                            PointsBuffer.RemoveAt(0);
+                            for (int i = 0; i < (PointsBuffer.Count >> 4); i++)
+                            {
+                                PointsBuffer.RemoveAt(0);
+                            }
                         }
                     }
 
@@ -207,63 +212,6 @@ namespace Heart_volume_display
             aTimer.AutoReset = true;
             aTimer.Enabled = true;
         }
-        public void SetTimerB() // this will be for the average check
-        {
-            aTimer = new System.Timers.Timer(10); // state action every 10 seconds
-            aTimer.Elapsed += Updata_points;
-            aTimer.AutoReset = true;
-            aTimer.Enabled = true;
-        }
-
-        public void SetTimerC() // this will be for the average check
-        {
-            aTimer = new System.Timers.Timer(10); // state action every 10 seconds
-            aTimer.Elapsed += Updata_points;
-            aTimer.AutoReset = true;
-            aTimer.Enabled = true;
-        }
-        void CheckHeartRate()
-        {
-           
-                switch(state)
-            {
-                case State.scared:
-                        // start the scared mouse shake
-                    break;
-                case State.calm:
-                        // start the calm process 
-                    break;
-                default:
-                    break;
-            }
-                if (heartRateList.Average() > prev_avg + prev_sdv) 
-                    // if the heart hart hate is not an outlier than it should be considerd normal
-                {
-                    state++;
-                }
-                else if(heartRateList.Average() > prev_avg + prev_sdv)
-                {
-                    state--;
-                    // start tick count of how long in calm state
-                }
-                else
-                {
-                    prev_avg = heartRateList.Average();
-                    prev_sdv = Math.Sqrt(heartRateList.Average(v => Math.Pow(v - prev_avg, 2)));
-                }
-                
-        }
-
-        void Async_scared_state() // this is 
-        {
-          // have a timer and a random extention and at the the en there will either be a noise played or a pop up , this will be a timer interupt for timer b
-        }
-
-        void Async_scare_state()
-        {
-
-        }
-
 
         public void Update_Content()
         {
@@ -272,7 +220,164 @@ namespace Heart_volume_display
             OnPropertyChanged("Content");
         }
 
-      
 
+
+        System.Timers.Timer state_output_timer;
+        public void SetTimerB()
+        {
+            state_output_timer = new System.Timers.Timer(1000);
+            state_output_timer.Elapsed += state_timer_elapsed;
+            state_output_timer.AutoReset = true;
+            state_output_timer.Enabled = true;
+            timer_start = Environment.TickCount & Int32.MaxValue;
+        }
+
+        enum State
+        {
+            start,
+            normal,
+            calm,
+            stressed,
+            scared
+        }
+
+        State state = State.start;
+        double stdv = 0;
+        double avg = 0;
+        void intput_state()// cursed
+        {
+                if (state == State.start)
+                {
+                    if (heartRateList.Count() > 0)
+                    {
+                        avg = heartRateList.Average();
+                        double sum = heartRateList.Sum(d => Math.Pow(d - avg, 2));
+
+                        stdv = Math.Sqrt((sum) / (heartRateList.Count() - 1));
+                        state = State.normal;
+                    }
+                }
+                else
+                {
+                    var temp = heartRateList.Average();// check for no elements
+
+                    if (temp > avg + stdv)
+                    {
+                    avg = temp;
+                    double sum = heartRateList.Sum(d => Math.Pow(d - avg, 2));
+
+                    stdv = Math.Sqrt((sum) / (heartRateList.Count() - 1));
+                    add_state();
+                    }
+                    else if (temp < avg - stdv)// make sure it is 
+                    {
+                    avg = temp;
+                    double sum = heartRateList.Sum(d => Math.Pow(d - avg, 2));
+
+                    stdv = Math.Sqrt((sum) / (heartRateList.Count() - 1));
+                    drop_state();
+                    }
+                    else
+                    {
+                        // Do nothing, but actual not do nothing becuse this will mea that the timer
+                        // will be elaping and doing whatever is does
+                    }
+                    
+                }
+        }
+
+        int timer_thresh = 4000;
+        int timer_start = 0;
+        private void state_timer_elapsed(object sender, ElapsedEventArgs e)
+        {
+            Console.WriteLine(Environment.TickCount);
+            switch (state)
+            {
+
+                case State.normal:
+                    Console.WriteLine("normal");
+                    if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
+                    {
+                        drop_state();
+                    }
+                    break;
+                case State.stressed:
+                    Console.WriteLine("stressed");
+                    if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
+                    {
+                        add_state();
+                    }
+                    break;
+                case State.scared:
+                    // output curso
+                    Console.WriteLine("scared");
+                    break;
+                case State.calm:
+                    Console.WriteLine("calm");
+                    if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
+                    {
+                        add_state();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
+        private void drop_state() // negitive transition
+        {
+            switch (state)
+            {
+                case State.normal:
+                    timer_start = Environment.TickCount & Int32.MaxValue;
+                    state = State.calm;
+                    break;
+                case State.stressed:
+                    timer_start = Environment.TickCount & Int32.MaxValue;
+                    timer_thresh = 4000;
+                    state = State.normal;
+                    break;
+                case State.scared:
+                    timer_start = Environment.TickCount & Int32.MaxValue;
+                    timer_thresh = 4000;
+                    state = State.normal;
+                    break;
+                case State.calm:
+                    //do nothign
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
+
+        private void add_state() // this is the positive transition
+        {
+            switch (state)
+            {
+                case State.normal:
+                    state = State.stressed;
+                    timer_start = Environment.TickCount & Int32.MaxValue;
+                    timer_thresh = 4000;
+                    break;
+                case State.stressed:
+                    state = State.scared;
+                    timer_start = Environment.TickCount & Int32.MaxValue;
+                    timer_thresh = 4000;
+                    break;
+                case State.scared:
+                    // do nothign
+                    break;
+                case State.calm:
+                    state = State.normal;
+                    timer_start = Environment.TickCount & Int32.MaxValue;
+                    timer_thresh = 4000;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }
