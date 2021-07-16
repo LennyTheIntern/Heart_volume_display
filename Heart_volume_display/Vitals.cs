@@ -50,7 +50,7 @@ namespace Heart_volume_display
         string data { get; set; }
         public PlotModel SerialModel { get; private set; }
       
-
+        private ScarePopUp scarepopup = new ScarePopUp();
         public Vitals()
         {
             Content = 0;
@@ -176,6 +176,7 @@ namespace Heart_volume_display
                     // send the list of heart rates to the state machine 
                     lock (heartRateList)
                     {
+                        
                         intput_state(); // when this is a ref then it breaks even when you lock it
                         heartRateList.Clear();
                     }
@@ -224,7 +225,7 @@ namespace Heart_volume_display
         System.Timers.Timer state_output_timer;
         public void SetTimerB()
         {
-            state_output_timer = new System.Timers.Timer(100);
+            state_output_timer = new System.Timers.Timer(1000);
             state_output_timer.Elapsed += state_timer_elapsed;
             state_output_timer.AutoReset = true;
             state_output_timer.Enabled = true;
@@ -307,6 +308,12 @@ namespace Heart_volume_display
         private void state_timer_elapsed(object sender, ElapsedEventArgs e)
         {
             Console.WriteLine(Environment.TickCount);
+            //Dispatcher.Invoke((Action)delegate {
+
+           
+                //scarepopup.ShowThenTerminate();    // your code
+            //});
+            
             switch (state)
             {
 
@@ -370,6 +377,11 @@ namespace Heart_volume_display
                 case State.normal:
                     timer_start = Environment.TickCount & Int32.MaxValue;
                     state = State.calm;
+                    scarepopup.Dispatcher.Invoke(() =>
+                    {
+                        scarepopup.ShowThenTerminate();
+                    }
+                    );
                     break;
                 case State.stressed:
                     timer_start = Environment.TickCount & Int32.MaxValue;

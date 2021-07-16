@@ -38,3 +38,5 @@ C:\Users\Leona\source\repos\Heart_volume_display\Heart_volume_display\obj\Debug\
 C:\Users\Leona\source\repos\Heart_volume_display\Heart_volume_display\obj\Debug\radial_volumbar.baml
 C:\Users\Leona\source\repos\Heart_volume_display\Heart_volume_display\obj\Debug\settings.g.cs
 C:\Users\Leona\source\repos\Heart_volume_display\Heart_volume_display\obj\Debug\settings.baml
+C:\Users\Leona\source\repos\Heart_volume_display\Heart_volume_display\obj\Debug\ScarePopUp.g.cs
+C:\Users\Leona\source\repos\Heart_volume_display\Heart_volume_display\obj\Debug\ScarePopUp.baml

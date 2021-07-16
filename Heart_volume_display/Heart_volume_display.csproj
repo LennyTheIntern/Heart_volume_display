@@ -102,6 +102,9 @@
     <Compile Include="radial_volumbar.xaml.cs">
       <DependentUpon>radial_volumbar.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ScarePopUp.xaml.cs">
+      <DependentUpon>ScarePopUp.xaml</DependentUpon>
+    </Compile>
     <Compile Include="settings.xaml.cs">
       <DependentUpon>settings.xaml</DependentUpon>
     </Compile>
@@ -119,6 +122,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="radial_volumbar.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ScarePopUp.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
