@@ -174,12 +174,7 @@ namespace Heart_volume_display
                     OnPropertyChanged("HeartRateNumber");
 
                     // send the list of heart rates to the state machine 
-                    lock (heartRateList)
-                    {
-                        
-                        intput_state(); // when this is a ref then it breaks even when you lock it
-                        heartRateList.Clear();
-                    }
+                  
                     // pop the front of the points list to make i appear like the hear wave is moving
                     
                     if (PointsBuffer.Count > Buffersize - 1)
@@ -263,7 +258,9 @@ namespace Heart_volume_display
         double avg = 0;
         void intput_state() // cursed
         {
-                if (state == State.start)
+            
+
+            if (state == State.start)
                 {
                     if (heartRateList.Count() > 0)
                     {
@@ -310,10 +307,17 @@ namespace Heart_volume_display
             Console.WriteLine(Environment.TickCount);
             //Dispatcher.Invoke((Action)delegate {
 
-           
-                //scarepopup.ShowThenTerminate();    // your code
+
+            //scarepopup.ShowThenTerminate();    // your code
             //});
-            
+
+
+            lock (heartRateList)
+            {
+                intput_state(); // when this is a ref then it breaks even when you lock it
+                heartRateList.Clear();
+            }
+
             switch (state)
             {
 
@@ -346,6 +350,11 @@ namespace Heart_volume_display
                     Console.WriteLine("calm");
                     if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
                     {
+                        scarepopup.Dispatcher.Invoke(() =>
+                        {
+                            scarepopup.ShowThenTerminate();
+                        }
+                        );
                         add_state();
                     }
                     
@@ -376,12 +385,9 @@ namespace Heart_volume_display
             {
                 case State.normal:
                     timer_start = Environment.TickCount & Int32.MaxValue;
+                    timer_thresh = 40000;
                     state = State.calm;
-                    scarepopup.Dispatcher.Invoke(() =>
-                    {
-                        scarepopup.ShowThenTerminate();
-                    }
-                    );
+                  
                     break;
                 case State.stressed:
                     timer_start = Environment.TickCount & Int32.MaxValue;
