@@ -31,7 +31,7 @@ namespace Heart_volume_display
 
        
        
-        public MainWindow()
+        public MainWindow() // make a app start funtion for vitals and put it in there
         {
             this.DataContext = new Vitals();
             _settings = new settings();

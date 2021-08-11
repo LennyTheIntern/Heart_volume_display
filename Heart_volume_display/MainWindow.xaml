@@ -13,10 +13,19 @@
         ResizeMode="NoResize"
         WindowStyle="None"
         AllowsTransparency="True"
-        
         >
-    <Border Background="#29252c" CornerRadius="20">
-        <Grid>
+
+
+        <WindowChrome.WindowChrome>
+            <WindowChrome CaptionHeight="25">
+            
+            </WindowChrome>
+        </WindowChrome.WindowChrome>
+    
+    
+            <Border Background="#29252c" CornerRadius="20">
+
+        <Grid >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50*"/>
                 <ColumnDefinition Width="50*"/>
@@ -57,7 +66,7 @@
                 </oxy:PlotView.RenderTransform>
             </oxy:PlotView>
             <StackPanel Orientation="Horizontal" />
-            <Button Background="Transparent" BorderBrush="Transparent" Margin="19,0,157,0" RenderTransformOrigin="1.182,0.4" Click="test_Click">
+            <Button Background="Transparent" BorderBrush="Transparent" Margin="19,0,157,0" RenderTransformOrigin="1.182,0.4" Click="test_Click" WindowChrome.IsHitTestVisibleInChrome="True">
                 <Image Source="imgs\more.png">
                 </Image>
             </Button>

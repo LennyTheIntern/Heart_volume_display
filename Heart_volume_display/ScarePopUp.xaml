@@ -9,8 +9,12 @@
         Title="ScarePopUp" Height="450" Width="800"
         WindowState="Maximized">
     <Grid>
-        <Image>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Image Name="ScareImg">
             <!-- this will be bound to a array or random images !-->
+            
         </Image>
     </Grid>
 </Window>

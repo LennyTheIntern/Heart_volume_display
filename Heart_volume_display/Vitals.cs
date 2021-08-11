@@ -11,6 +11,7 @@ using NAudio;
 using NAudio.CoreAudioApi;
 using System.Windows.Threading;
 using System.IO.Ports;
+using System.IO;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
@@ -29,8 +30,8 @@ namespace Heart_volume_display
         double prev_avg = 0;
         double prev_sdv = 0;
         int calm_ticks = 0;
-        
-        public double HeartRateNumber { get; set; }
+
+        public string HeartRateNumber { get; set; }
         public IList<string> PointsBuffer { get; set; }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -45,26 +46,36 @@ namespace Heart_volume_display
         public int AudioDeviceIndex { get; set; }
         public int PortIndex { get; set; }
 
+        
         public MMDevice AudioDevice { get; set; }
         public MMDeviceCollection AudioDevices { get; set; }
         string data { get; set; }
         public PlotModel SerialModel { get; private set; }
-      
+
         private ScarePopUp scarepopup = new ScarePopUp();
         public Vitals()
         {
+            // no idea what content is
             Content = 0;
-            HeartRateNumber = 0;
+
+            //the should be renamed to HeartRate
+            HeartRateNumber = "0";
+
+
+
+            // adds all of the audio devices to the the settings menu
             var enumerator = new MMDeviceEnumerator();
             PointsBuffer = new List<string>();
             AudioDevices = enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.Active);
             AudioDeviceLabels = new List<string>();
-            for (int i = 0 ; i < AudioDevices.Count; i++)
+            for (int i = 0; i < AudioDevices.Count; i++)
             {
                 AudioDeviceLabels.Add(AudioDevices[i].ToString());
             }
             OnPropertyChanged("AudioDeviceLabels");
 
+
+            // adds all the ports connected to the ports list
             var Ports = SerialPort.GetPortNames();
             PortLabels = new List<string>();
             foreach (string i in Ports)
@@ -72,12 +83,18 @@ namespace Heart_volume_display
                 PortLabels.Add(i);
             }
 
+
+            //initiaizes the heart rate list
             heartRateList = new List<double>();
+
+            // this should be done in a seperate class so you can easily cotom the pot
             SerialModel = new PlotModel();
             SerialModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, IsAxisVisible = false });
-            SerialModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Minimum = 100, Maximum = 1000, IsAxisVisible = false });   
+            SerialModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Minimum = 100, Maximum = 1000, IsAxisVisible = false });
             SerialModel.Series.Add(new LineSeries { LineStyle = LineStyle.Solid, StrokeThickness = 4, Color = OxyColor.Parse("#9effa9") });
             SerialModel.PlotAreaBorderColor = OxyColors.Transparent;
+
+            //rename timer a to
             SetTimerA();
             SetTimerB();
             SetTimerShake();
@@ -96,7 +113,7 @@ namespace Heart_volume_display
             }
 
             data = null;
-            
+
             //port = new SerialPort(PortLabels[PortIndex], 115200, Parity.None, 8, StopBits.One); // resets the port
             port.DataReceived += new SerialDataReceivedEventHandler(port_DataReceived);
 
@@ -109,13 +126,13 @@ namespace Heart_volume_display
                 Console.WriteLine(ex.Message);
             }
         }
-    
+
 
         private void port_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             data += port.ReadExisting();
         }
-        
+
         private void Updata_points(object sender, ElapsedEventArgs e)
         {
             if (data != null)
@@ -126,57 +143,65 @@ namespace Heart_volume_display
                     PointsBuffer.Add(i);
                 }
                 PointsBuffer.RemoveAt(PointsBuffer.Count - 1); // make sure the points buffer is not 0
-                
+
                 if (PointsBuffer.Count > Buffersize)
                 {
-                    lock(PointsBuffer)
-                    { 
-                            var s = (LineSeries)SerialModel.Series[0];
+                    lock (PointsBuffer)
+                    {
+                        var s = (LineSeries)SerialModel.Series[0];
 
-                            s.Points.Clear();
-                            int delta_x = 0;
-                            foreach (string i in PointsBuffer.ToList())
+                        s.Points.Clear();
+                        int delta_x = 0;
+                        foreach (string i in PointsBuffer.ToList())
+                        {
+                            if (i != null)
                             {
-                                if (i != null)
+                                var ii = i.Split(',');
+
+                                if (ii.Length == 3)
                                 {
-                                    var ii = i.Split(',');
-
-                                    if (ii.Length == 3)
+                                    // how to check for a format exeption before operation
+                                    if (ii[0] != "")
                                     {
-                                        // how to check for a format exeption before operation
-                                        if (ii[0] != "")
+                                        try
                                         {
-                                            try
+                                            
+                                            lock (heartRateList)
                                             {
-                                                HeartRateNumber = double.Parse(ii[0]);
-                                                lock (heartRateList)
-                                                {
-                                                    heartRateList.Add(HeartRateNumber);
-                                                }
-                                            }
-                                            catch
-                                            {
-
+                                                
+                                                heartRateList.Add(double.Parse(ii[0]));
                                             }
                                         }
+                                        catch
+                                        {
+
+                                        }
+                                    }
+
+                                    double validationBufor;
+
+                                    if (double.TryParse(ii[2], out validationBufor))
+                                    {
                                         s.Points.Add(new DataPoint(delta_x, double.Parse(ii[2])));//TODO: check if they are in the right format
-
-
                                         delta_x += 10;
                                     }
                                 }
                             }
-                        
+                        }
+
                     }
                     // empty data
                     data = null;
                     SerialModel.InvalidatePlot(true);
-                    OnPropertyChanged("HeartRateNumber");
+
 
                     // send the list of heart rates to the state machine 
-                  
+                    lock (heartRateList)
+                    {
+                        intput_state(); // when this is a ref then it breaks even when you lock it
+                    }
                     // pop the front of the points list to make i appear like the hear wave is moving
-                    
+
                     if (PointsBuffer.Count > Buffersize - 1)
                     {
                         lock (PointsBuffer)
@@ -192,6 +217,8 @@ namespace Heart_volume_display
             }
         }
 
+
+
         public void force()
         {
             while(true)
@@ -200,6 +227,8 @@ namespace Heart_volume_display
             }
         }
 
+
+        // this is the for updataing the points
         public void SetTimerA()
         {
             aTimer = new System.Timers.Timer(10);
@@ -208,6 +237,7 @@ namespace Heart_volume_display
             aTimer.Enabled = true;
         }
 
+        //this should be renamed to Update VolumeValue
         public void Update_Content()
         {
             var temp = AudioDevices[AudioDeviceIndex].AudioMeterInformation.MasterPeakValue * 100;    
@@ -217,6 +247,7 @@ namespace Heart_volume_display
 
 
 
+        // this is a timer for checking the states and outputng constantly
         System.Timers.Timer state_output_timer;
         public void SetTimerB()
         {
@@ -227,6 +258,8 @@ namespace Heart_volume_display
             timer_start = Environment.TickCount & Int32.MaxValue;
         }
 
+
+        //rename thi to "startMouseShake
         System.Timers.Timer shake_mouse_timer;
         public void SetTimerShake()
         {
@@ -237,13 +270,7 @@ namespace Heart_volume_display
         }
 
 
-        public void SetTimer()
-        {
-
-        }
-
-
-
+        // move all of the state machine shit to another object
         enum State
         {
             start,
@@ -253,13 +280,17 @@ namespace Heart_volume_display
             scared
         }
 
+
+        // this mess was the result of that debug mess
+        //refactor this to take in a list of double
+
+        //used for changing the state parameters
         State state = State.start;
         double stdv = 0;
         double avg = 0;
-        void intput_state() // cursed
+        void intput_state()
         {
-            
-
+          
             if (state == State.start)
                 {
                     if (heartRateList.Count() > 0)
@@ -271,11 +302,11 @@ namespace Heart_volume_display
                         state = State.normal;
                     }
                 }
-                else
-                {
+                else if (heartRateList.Count != 0)
+            {
                     var temp = heartRateList.Average(); // check for no elements
 
-                    if (temp > avg + stdv)
+                    if (temp > avg + 2)
                     {
                     avg = temp;
                     double sum = heartRateList.Sum(d => Math.Pow(d - avg, 2));
@@ -283,37 +314,60 @@ namespace Heart_volume_display
                         stdv = Math.Sqrt((sum) / (heartRateList.Count() - 1));
                         add_state();
                     }
-                    else if (temp < avg - stdv) // make sure it is 
+                    else if (temp < avg - 2) // make sure it is 
                     {
                     avg = temp;
                     double sum = heartRateList.Sum(d => Math.Pow(d - avg, 2));
-
+                    
                     stdv = Math.Sqrt((sum) / (heartRateList.Count() - 1));
                     drop_state();
                     }
                     else
                     {
-                        // Do nothing, but actual not do nothing becuse this will mea that the timer
-                        // will be elaping and doing whatever is does
+                
                     }
                     
                 }
         }
 
+
+        // this is not a state machine so stop trying to make it one
         int timer_thresh = 4000;
         int timer_start = 0;
         private void state_timer_elapsed(object sender, ElapsedEventArgs e)
         {
             Console.WriteLine(Environment.TickCount);
-            //Dispatcher.Invoke((Action)delegate {
 
 
-            //scarepopup.ShowThenTerminate();    // your code
-            //});
+            if (int.Parse(HeartRateNumber) >= 50 && int.Parse(HeartRateNumber) <= 110)
+            {
+                lock (HeartRateNumber)
+                {
+                    //FileStream dumpfile = new FileStream("Metrics.txt", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                    //if (dumpfile.CanWrite)
+                    //{
+                    //    byte[] info = Encoding.ASCII.GetBytes(HeartRateNumber);
+                    //    dumpfile.w(info, 0, info.Length);
+                    //}
+                    //dumpfile.Flush();
+                    //dumpfile.Close();
 
+                    StreamWriter sw;
+                    sw = File.AppendText("Metrics.csv");
+                    sw.WriteLine(HeartRateNumber);
+                    sw.Close();
+                    //File.AppendText("Metics.txt", HeartRateNumber);
+                }
+            }
 
             lock (heartRateList)
             {
+                if (heartRateList.Count() > 1)
+                {
+                    HeartRateNumber =Math.Truncate( heartRateList.Average()).ToString();
+                    OnPropertyChanged("HeartRateNumber");
+                
+                }
                 intput_state(); // when this is a ref then it breaks even when you lock it
                 heartRateList.Clear();
             }
@@ -326,14 +380,8 @@ namespace Heart_volume_display
                     Console.WriteLine("normal");
                     if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
                     {
+                        calm_state_unlocked = true;
                         drop_state();
-                    }
-                    break;
-                case State.stressed:
-                    Console.WriteLine("stressed");
-                    if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
-                    {
-                        add_state();
                     }
                     break;
                 case State.scared:
@@ -350,11 +398,11 @@ namespace Heart_volume_display
                     Console.WriteLine("calm");
                     if (((Environment.TickCount & Int32.MaxValue) - timer_start) > timer_thresh)
                     {
-                        scarepopup.Dispatcher.Invoke(() =>
-                        {
-                            scarepopup.ShowThenTerminate();
-                        }
-                        );
+                        //scarepopup.Dispatcher.Invoke(() =>
+                        //{
+                        //    scarepopup.ShowThenTerminate();
+                        //}
+                        //);
                         add_state();
                     }
                     
@@ -379,20 +427,18 @@ namespace Heart_volume_display
             });
         }
 
+        bool calm_state_unlocked = false;
         private void drop_state() // negitive transition
         {
             switch (state)
             {
                 case State.normal:
-                    timer_start = Environment.TickCount & Int32.MaxValue;
-                    timer_thresh = 40000;
-                    state = State.calm;
-                  
-                    break;
-                case State.stressed:
-                    timer_start = Environment.TickCount & Int32.MaxValue;
-                    timer_thresh = 4000;
-                    state = State.normal;
+                    if (calm_state_unlocked)
+                    {
+                        timer_start = Environment.TickCount & Int32.MaxValue;
+                        timer_thresh = 4000;
+                        state = State.calm;
+                    }
                     break;
                 case State.scared:
                     shake_mouse_timer.Stop();
@@ -415,11 +461,6 @@ namespace Heart_volume_display
             switch (state)
             {
                 case State.normal:
-                    state = State.stressed;
-                    timer_start = Environment.TickCount & Int32.MaxValue;
-                    timer_thresh = 4000;
-                    break;
-                case State.stressed:
                     state = State.scared;
                     shake_mouse_timer.Start();
                     timer_start = Environment.TickCount & Int32.MaxValue;
@@ -430,6 +471,7 @@ namespace Heart_volume_display
                     break;
                 case State.calm:
                     state = State.normal;
+                    calm_state_unlocked = false;
                     timer_start = Environment.TickCount & Int32.MaxValue;
                     timer_thresh = 4000;
                     break;
