@@ -7,3 +7,7 @@ WPF app
 state Machine for Scare logic
 ![image](https://user-images.githubusercontent.com/84061212/130515799-de77e8e4-77b1-4503-9add-5542cd187629.png)
 
+what it looks like on stream!
+
+![image](https://user-images.githubusercontent.com/84061212/130516488-6e9e45f3-642e-470f-ba06-243dc8d55bea.png)
+
