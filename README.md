@@ -13,7 +13,8 @@ what it looks like on stream!
 ![image](https://user-images.githubusercontent.com/84061212/130516488-6e9e45f3-642e-470f-ba06-243dc8d55bea.png)
 
 its a simple arduino program relaying the information from the seansor
-![image](https://user-images.githubusercontent.com/84061212/130517338-a7ede33c-ea05-4800-87e4-f2317e607c88.png)
+![20210823_133720_HDR](https://user-images.githubusercontent.com/84061212/130517402-558365a7-a9ad-4a32-b8a9-a6d5606070bf.jpg)
+
 
 
 When the app "scares you" it will pop up with a random image in the image folder accompanied by and random .wav in the audeo folder
