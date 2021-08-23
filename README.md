@@ -2,6 +2,7 @@
 this is a display that takes input from a arduino to see when you are calm to scare you. meant6 for a fun app for people to try out on Twitch and gaming youtube channels
 
 WPF app
+
 ![image](https://user-images.githubusercontent.com/84061212/130515686-59c77534-ab4b-43d3-a12f-0269ffdd30c7.png)
 
 state Machine for Scare logic
@@ -10,4 +11,9 @@ state Machine for Scare logic
 what it looks like on stream!
 
 ![image](https://user-images.githubusercontent.com/84061212/130516488-6e9e45f3-642e-470f-ba06-243dc8d55bea.png)
+
+When the app "scares you" it will pop up with a random image in the image folder accompanied by and random .wav in the audeo folder
+
+![image](https://user-images.githubusercontent.com/84061212/130517009-e561736d-7619-428d-b034-21c62a74b47e.png)
+
 
